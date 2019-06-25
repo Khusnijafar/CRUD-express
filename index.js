@@ -1,9 +1,10 @@
-require('dotenv').config()
+require('dotenv').config();
 
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const port = process.env.SERVER_PORT || 3011;
+var cors = require('cors');
 const mysql = require('mysql');
 
 const connection = mysql.createConnection({
@@ -15,16 +16,48 @@ const connection = mysql.createConnection({
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false}));
+app.use(cors());
 
 app.listen(port, () => {
     console.log(`Aplikasi sedang berjalan pada port ${port} ya gan`);
     
 });
 
-//GET data
-// app.get('/', (req, res) => {
-//     res.send('Hello Good People');
-// });
+app.get('/', (req, res) => {
+    const data = req.query.categoryid;
+    const location = req.query.location;
+
+    if (data) {
+        connection.query('SELECT * FROM data INNER JOIN category ON data.categoryid = category.categoryid WHERE data.categoryid = ?', data, (err, result) => {
+            if (err) console.log(err);
+            res.status(200).json({
+                success: true,
+                message: "Berikut datanya ya pemirsa",
+                data: result,
+            });
+            
+        });
+    } else if (location) {
+        connection.query('SELECT * FROM data WHERE location = ?', location, (err, result) => {
+            if (err) console.log(err);
+            res.status(200).json({
+                success: true,
+                message: "Berikut datanya ya pemirsa",
+                data: result,
+            });
+        });
+    } else {
+        connection.query('SELECT * FROM data', (err, result) => {
+            if (err) console.log(err);
+            res.status(200).json({
+                message: "Berikut datanya ya pemirsa",
+                data: result,
+            });
+        });
+        
+    }
+  
+});
 
 // POST data
 app.post('/', (req, res) => {
@@ -36,10 +69,13 @@ app.post('/', (req, res) => {
     };
     connection.query('INSERT INTO data SET ?', index, (err, result) => {
         if (err) console.log(err);
-        res.json(result);
+        res.status(200).json({
+            success: true,
+            message: "Mantap, data berhasil ditambahkan agan,sista",
+            data: result,
+        });
     });
 });
-
 
 // Patch
 app.patch('/:bookid', (req, res) => {
@@ -53,7 +89,11 @@ app.patch('/:bookid', (req, res) => {
     };
     connection.query(`UPDATE data SET ? WHERE bookid = ?`, [index, bookid], (err, result) => {
         if (err) console.log(err);
-        res.json(result);
+        res.status(200).json({
+            success: true,
+            message: "Datanya berhasil kamu edit ya, selamat",
+            data: result,
+        });
     });
 });
 
@@ -63,27 +103,15 @@ app.delete('/:bookid', (req, res) => {
 
     connection.query('DELETE FROM data WHERE bookid = ?', bookid, (err, result) => {
         if (err) console.log(err);
-        res.json(result);
+        res.status(200).json({
+            success: true,
+            message: "Datanya berhasil dihapus",
+            data: result,
+        });
     });
 });
 
 
-app.get('/', (req, res) => {
-    const categoryid = req.query.categoryid;
-
-    if (categoryid) {
-        connection.query('SELECT * FROM data INNER JOIN category ON data.categoryid = category.categoryid WHERE data.categoryid = ?', categoryid, (err, result) => {
-            if (err) console.log(err);
-            res.json(result);
-        });
-    } else {
-        connection.query('Select * from data', (err, result) => {
-            if (err) console.log(err);
-            res.json(result);
-        });
-    }
-  
-});
 
 
 
